@@ -29,6 +29,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `bin/rails db:rollback` - Rollback last migration
 - `bin/rails db:seed` - Load seed data
 
+### Dev Cleanup (development only)
+- `bin/rails dev:cleanup:transactions` - Remove all entries/transactions, keep accounts & users
+- `bin/rails dev:cleanup:accounts` - Remove all accounts + their data, keep users & families
+- `bin/rails dev:cleanup:full` - Remove all financial data, keep only users & families
+
 ### Setup
 - `bin/setup` - Initial project setup (installs dependencies, prepares database)
 
