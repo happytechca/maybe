@@ -67,7 +67,7 @@ module QifParser
            .first
   end
 
-  # Parses all transactions from the file.
+  # Parses all transactions from the file, excluding the Opening Balance entry.
   # Returns an array of ParsedTransaction structs.
   def self.parse(content)
     return [] unless valid?(content)
@@ -82,6 +82,34 @@ module QifParser
     return [] unless section
 
     parse_records(section).filter_map { |record| build_transaction(record) }
+  end
+
+  # Returns the opening balance entry from the QIF file, if present.
+  # In Quicken's QIF format, the first transaction of a bank/cash account is often
+  # an "Opening Balance" record with payee "Opening Balance".  This entry is NOT a
+  # real transaction – it is the account's starting balance.
+  #
+  # Returns a hash { date: Date, amount: BigDecimal } or nil.
+  def self.parse_opening_balance(content)
+    return nil unless valid?(content)
+
+    content = normalize_encoding(content)
+    content = normalize_line_endings(content)
+
+    type = account_type(content)
+    return nil unless type
+
+    section = extract_section(content, type)
+    return nil unless section
+
+    record = parse_records(section).find { |r| r["P"]&.strip == "Opening Balance" }
+    return nil unless record
+
+    date   = parse_qif_date(record["D"])
+    amount = parse_qif_amount(record["T"] || record["U"])
+    return nil unless date && amount
+
+    { date: Date.parse(date), amount: amount.to_d }
   end
 
   # Parses categories from the !Type:Cat section.
@@ -174,6 +202,10 @@ module QifParser
   private_class_method :parse_records
 
   def self.build_transaction(record)
+    # "Opening Balance" is a Quicken convention for the account's starting balance –
+    # it is not a real transaction and must not be imported as one.
+    return nil if record["P"]&.strip == "Opening Balance"
+
     raw_date   = record["D"]
     raw_amount = record["T"] || record["U"]
 

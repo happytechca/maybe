@@ -19,6 +19,9 @@ namespace :dev do
         counts[:transfers]         = Transfer.delete_all
         counts[:rejected_transfers] = RejectedTransfer.delete_all
 
+        # Null out matched_entry_id FK before deleting entries to avoid FK violation
+        Import::Row.where.not(matched_entry_id: nil).update_all(matched_entry_id: nil)
+
         # Entries cascade-destroy their entryable (Transaction / Valuation / Trade)
         counts[:entries]           = Entry.delete_all
 
@@ -49,6 +52,7 @@ namespace :dev do
       ActiveRecord::Base.transaction do
         counts[:transfers]          = Transfer.delete_all
         counts[:rejected_transfers] = RejectedTransfer.delete_all
+        Import::Row.where.not(matched_entry_id: nil).update_all(matched_entry_id: nil)
         counts[:entries]            = Entry.delete_all
         counts[:balances]           = Balance.delete_all
         counts[:holdings]           = Holding.delete_all
@@ -79,6 +83,7 @@ namespace :dev do
       ActiveRecord::Base.transaction do
         counts[:transfers]          = Transfer.delete_all
         counts[:rejected_transfers] = RejectedTransfer.delete_all
+        Import::Row.where.not(matched_entry_id: nil).update_all(matched_entry_id: nil)
         counts[:entries]            = Entry.delete_all
         counts[:balances]           = Balance.delete_all
         counts[:holdings]           = Holding.delete_all
@@ -89,9 +94,14 @@ namespace :dev do
         counts[:plaid_accounts]     = PlaidAccount.delete_all
         counts[:plaid_items]        = PlaidItem.delete_all
         counts[:chats]              = Chat.delete_all
+        counts[:budget_categories]  = BudgetCategory.delete_all
+        counts[:budgets]            = Budget.delete_all
         counts[:categories]         = Category.delete_all
+        counts[:taggings]           = Tagging.delete_all
         counts[:tags]               = Tag.delete_all
         counts[:merchants]          = Merchant.delete_all
+        counts[:rule_actions]       = Rule::Action.delete_all
+        counts[:rule_conditions]    = Rule::Condition.delete_all
         counts[:rules]              = Rule.delete_all
 
         counts[:accounts] = 0
