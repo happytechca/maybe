@@ -98,6 +98,8 @@ Rails.application.routes.draw do
 
   resources :transfers, only: %i[new create destroy show update]
 
+  post "/imports/quick", to: "import/quick_imports#create", as: :quick_import
+
   resources :imports, only: %i[index new show create destroy] do
     member do
       post :publish
@@ -109,6 +111,8 @@ Rails.application.routes.draw do
     resource :configuration, only: %i[show update], module: :import
     resource :clean, only: :show, module: :import
     resource :confirm, only: :show, module: :import
+    resource :link_account, only: %i[show update], module: :import
+    resource :qif_category_selection, only: %i[show update], module: :import
 
     resources :rows, only: %i[show update], module: :import
     resources :mappings, only: :update, module: :import

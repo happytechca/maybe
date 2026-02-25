@@ -1,0 +1,52 @@
+<%= content_for :previous_path, imports_path %>
+
+<div class="space-y-4 mx-auto max-w-md">
+  <div class="text-center space-y-2">
+    <div class="flex justify-center mb-4">
+      <div class="bg-teal-500/10 rounded-full p-4">
+        <span class="text-teal-500">
+          <%= icon("landmark", size: "xl", color: "current") %>
+        </span>
+      </div>
+    </div>
+    <h1 class="text-3xl text-primary font-medium">Link your account</h1>
+    <p class="text-secondary text-sm">
+      This is the first time you've imported from this account.
+      Link it to a Maybe account so future imports are automatic.
+    </p>
+  </div>
+
+  <div class="bg-container shadow-border-xs rounded-xl p-4 space-y-1">
+    <p class="text-xs font-medium text-secondary uppercase tracking-wide">Detected account</p>
+    <div class="flex items-center gap-3">
+      <%= icon("file-text", class: "text-secondary shrink-0") %>
+      <div>
+        <% if @import.ofx_bank_name.present? %>
+          <p class="text-sm font-medium text-primary"><%= @import.ofx_bank_name %></p>
+        <% end %>
+        <p class="text-sm text-secondary font-mono">
+          Account ID: <span class="text-primary"><%= @import.ofx_acct_id %></span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <%= styled_form_with url: import_link_account_path(@import), method: :put, class: "space-y-4" do |form| %>
+    <%= form.select :account_id,
+          @accounts.pluck(:name, :id),
+          { label: "Link to Maybe account", include_blank: "Select account..." },
+          required: true %>
+
+    <p class="text-xs text-secondary">
+      This account ID will be remembered so future imports are automatic.
+    </p>
+
+    <%= form.submit "Link account and continue", class: "w-full" %>
+  <% end %>
+
+  <div class="text-center">
+    <%= link_to "Cancel and discard this import", import_path(@import),
+          data: { turbo_method: :delete, turbo_confirm: "Discard this import?" },
+          class: "text-sm text-secondary hover:text-primary" %>
+  </div>
+</div>

@@ -85,4 +85,7 @@ Rails.application.configure do
 
   # Allow connection from any host in development
   config.hosts = nil
+
+  local_config = File.expand_path("development.local.rb", __dir__)
+  instance_eval(File.read(local_config)) if File.exist?(local_config)
 end

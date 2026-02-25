@@ -20,7 +20,7 @@
       <%= render DS::Link.new(
         text: "Next step",
         variant: "primary",
-        href: import_confirm_path(@import),
+        href: @import.quick? ? import_path(@import) : import_confirm_path(@import),
         frame: :_top,
         class: "w-full md:w-auto"
       ) %>
@@ -62,7 +62,7 @@
 
   <div class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full p-12">
     <div class="shadow-border-xs rounded-lg p-3 max-w-2xl mx-auto bg-container">
-      <%= render "shared/pagination", pagy: @pagy %>
+      <%= render "shared/pagination", pagy: @pagy, per_page_options: [["25", "25"], ["50", "50"], ["All", "99999"]] %>
     </div>
   </div>
 </div>

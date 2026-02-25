@@ -12,3 +12,11 @@ account:
   family: dylan_family
   type: AccountImport
   status: pending
+
+qfx:
+  family: dylan_family
+  type: QfxImport
+  status: pending
+  signage_convention: inflows_positive
+  date_format: "%Y-%m-%d"
+  number_format: "1,234.56"

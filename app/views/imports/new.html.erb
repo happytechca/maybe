@@ -85,6 +85,46 @@
           </li>
         <% end %>
 
+        <% if Current.family.accounts.any? && (params[:type].nil? || params[:type] == "QfxImport" || params[:type] == "TransactionImport") %>
+          <li>
+            <%= button_to imports_path(import: { type: "QfxImport" }), class: "flex items-center justify-between p-4 group cursor-pointer w-full", data: { turbo: false } do %>
+              <div class="flex items-center gap-2">
+                <div class="bg-teal-500/5 rounded-md w-8 h-8 flex items-center justify-center">
+                  <span class="text-teal-500">
+                    <%= icon("landmark", color: "current") %>
+                  </span>
+                </div>
+                <span class="text-sm text-primary group-hover:text-secondary">
+                  Import from bank (QFX/OFX)
+                </span>
+              </div>
+              <%= icon("chevron-right") %>
+            <% end %>
+
+            <%= render "shared/ruler" %>
+          </li>
+        <% end %>
+
+        <% if Current.family.accounts.any? && (params[:type].nil? || params[:type] == "QifImport") %>
+          <li>
+            <%= button_to imports_path(import: { type: "QifImport" }), class: "flex items-center justify-between p-4 group cursor-pointer w-full", data: { turbo: false } do %>
+              <div class="flex items-center gap-2">
+                <div class="bg-orange-500/5 rounded-md w-8 h-8 flex items-center justify-center">
+                  <span class="text-orange-500">
+                    <%= icon("arrow-right-left", color: "current") %>
+                  </span>
+                </div>
+                <span class="text-sm text-primary group-hover:text-secondary">
+                  Import from Quicken (QIF)
+                </span>
+              </div>
+              <%= icon("chevron-right") %>
+            <% end %>
+
+            <%= render "shared/ruler" %>
+          </li>
+        <% end %>
+
         <% if Current.family.accounts.any? && (params[:type].nil? || params[:type] == "MintImport" || params[:type] == "TransactionImport") %>
           <li>
             <%= button_to imports_path(import: { type: "MintImport" }), class: "flex items-center justify-between p-4 group w-full", data: { turbo: false } do %>

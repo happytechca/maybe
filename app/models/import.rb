@@ -1,7 +1,7 @@
 class Import < ApplicationRecord
   MaxRowCountExceededError = Class.new(StandardError)
 
-  TYPES = %w[TransactionImport TradeImport AccountImport MintImport].freeze
+  TYPES = %w[TransactionImport TradeImport AccountImport MintImport QfxImport QifImport].freeze
   SIGNAGE_CONVENTIONS = %w[inflows_positive inflows_negative]
   SEPARATORS = [ [ "Comma (,)", "," ], [ "Semicolon (;)", ";" ] ].freeze
 
@@ -173,6 +173,10 @@ class Import < ApplicationRecord
 
   def mapping_steps
     []
+  end
+
+  def skip_configuration?
+    false
   end
 
   def uploaded?

@@ -1,12 +1,16 @@
 <%# locals: (import:) %>
 
 <% steps = [
-  { name: "Upload", path: import_upload_path(import), is_complete: import.uploaded?, step_number: 1 },
-  { name: "Configure", path: import_configuration_path(import), is_complete: import.configured?, step_number: 2 },
-  { name: "Clean", path: import_clean_path(import), is_complete: import.cleaned?, step_number: 3 },
-  { name: "Map", path: import_confirm_path(import), is_complete: import.publishable?, step_number: 4 },
-  { name: "Confirm", path: import_path(import), is_complete: import.complete?, step_number: 5 }
-].reject { |step| step[:name] == "Map" && import.mapping_steps.empty? } %>
+  { name: "Upload",    path: import_upload_path(import),                      is_complete: import.uploaded?,            step_number: 1 },
+  { name: "Configure", path: import_configuration_path(import),               is_complete: import.configured?,          step_number: 2 },
+  { name: "Select",    path: import.is_a?(QifImport) ? import_qif_category_selection_path(import) : nil, is_complete: import.is_a?(QifImport) && import.categories_selected?, step_number: 3 },
+  { name: "Clean",     path: import_clean_path(import),                       is_complete: import.cleaned?,             step_number: 4 },
+  { name: "Map",       path: import_confirm_path(import),                     is_complete: import.publishable?,         step_number: 5 },
+  { name: "Confirm",   path: import_path(import),                             is_complete: import.complete?,            step_number: 6 }
+].reject { |step| step[:path].nil? }
+  .reject { |step| step[:name] == "Map" && import.mapping_steps.empty? }
+  .reject { |step| step[:name] == "Configure" && import.skip_configuration? }
+  .each_with_index.map { |step, idx| step.merge(step_number: idx + 1) } %>
 
 <% content_for :mobile_import_progress do %>
   <% active_step = steps.detect { |s| request.path.eql?(s[:path]) } %>

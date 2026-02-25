@@ -14,22 +14,55 @@ class Import::UploadsController < ApplicationController
   end
 
   def update
-    if csv_valid?(csv_str)
-      @import.account = Current.family.accounts.find_by(id: params.dig(:import, :account_id))
-      @import.assign_attributes(raw_file_str: csv_str, col_sep: upload_params[:col_sep])
-      @import.save!(validate: false)
-
-      redirect_to import_configuration_path(@import, template_hint: true), notice: "CSV uploaded successfully."
+    if @import.is_a?(QfxImport)
+      handle_qfx_upload
+    elsif @import.is_a?(QifImport)
+      handle_qif_upload
     else
-      flash.now[:alert] = "Must be valid CSV with headers and at least one row of data"
-
-      render :show, status: :unprocessable_entity
+      handle_csv_upload
     end
   end
 
   private
     def set_import
       @import = Current.family.imports.find(params[:import_id])
+    end
+
+    def handle_qfx_upload
+      raw_bytes    = upload_params[:qfx_file]&.read
+      file_content = OfxParser.normalize_encoding(raw_bytes)
+
+      unless file_content.present? && OfxParser.valid?(file_content)
+        flash.now[:alert] = "Must be a valid QFX or OFX file with at least one transaction"
+        return render :show, status: :unprocessable_entity
+      end
+
+      @import.account = Current.family.accounts.find_by(id: params.dig(:import, :account_id))
+
+      unless @import.account
+        flash.now[:alert] = "Please select an account for this import"
+        return render :show, status: :unprocessable_entity
+      end
+
+      @import.update!(raw_file_str: file_content)
+      @import.generate_rows_from_csv
+      @import.reload.sync_mappings
+
+      redirect_to import_clean_path(@import), notice: "QFX file uploaded and parsed successfully."
+    end
+
+    def handle_csv_upload
+      if csv_valid?(csv_str)
+        @import.account = Current.family.accounts.find_by(id: params.dig(:import, :account_id))
+        @import.assign_attributes(raw_file_str: csv_str, col_sep: upload_params[:col_sep])
+        @import.save!(validate: false)
+
+        redirect_to import_configuration_path(@import, template_hint: true), notice: "CSV uploaded successfully."
+      else
+        flash.now[:alert] = "Must be valid CSV with headers and at least one row of data"
+
+        render :show, status: :unprocessable_entity
+      end
     end
 
     def csv_str
@@ -47,7 +80,29 @@ class Import::UploadsController < ApplicationController
       end
     end
 
+    def handle_qif_upload
+      raw_bytes    = upload_params[:qif_file]&.read
+      file_content = QifParser.normalize_encoding(raw_bytes)
+
+      unless file_content.present? && QifParser.valid?(file_content)
+        flash.now[:alert] = "Must be a valid QIF file with at least one transaction"
+        return render :show, status: :unprocessable_entity
+      end
+
+      @import.account = Current.family.accounts.find_by(id: params.dig(:import, :account_id))
+
+      unless @import.account
+        flash.now[:alert] = "Please select an account for this import"
+        return render :show, status: :unprocessable_entity
+      end
+
+      @import.update!(raw_file_str: file_content)
+      @import.generate_rows_from_csv
+
+      redirect_to import_qif_category_selection_path(@import)
+    end
+
     def upload_params
-      params.require(:import).permit(:raw_file_str, :csv_file, :col_sep)
+      params.require(:import).permit(:raw_file_str, :csv_file, :qfx_file, :qif_file, :col_sep, :account_id)
     end
 end

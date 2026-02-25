@@ -4,9 +4,12 @@ class Import::ConfigurationsController < ApplicationController
   before_action :set_import
 
   def show
+    redirect_to import_clean_path(@import) if @import.skip_configuration?
   end
 
   def update
+    return redirect_to import_clean_path(@import) if @import.skip_configuration?
+
     @import.update!(import_params)
     @import.generate_rows_from_csv
     @import.reload.sync_mappings
