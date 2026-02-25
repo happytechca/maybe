@@ -10,6 +10,18 @@
     <p class="text-secondary text-sm"><%= t(".description") %></p>
   </div>
 
+  <% matched_count = @import.rows.select(&:matched?).count %>
+  <% if matched_count > 0 %>
+    <div class="bg-container border border-primary rounded-lg p-3 flex items-center gap-2">
+      <%= icon "check-circle", size: "sm", color: "success" %>
+      <p class="text-sm text-primary">
+        <span class="font-medium"><%= matched_count %></span> <%= "transaction".pluralize(matched_count) %>
+        matched to existing <%= "entry".pluralize(matched_count) %> and will be skipped.
+        <span class="text-secondary"><%= @import.rows.count - matched_count %> new.</span>
+      </p>
+    </div>
+  <% end %>
+
   <% if @import.cleaned? %>
     <div class="bg-container border border-tertiary rounded-lg p-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0">
       <div class="flex items-center gap-2">

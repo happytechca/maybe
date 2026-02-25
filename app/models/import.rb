@@ -108,17 +108,21 @@ class Import < ApplicationRecord
   end
 
   def dry_run
-    mappings = {
-      transactions: rows.count,
+    matched_count = rows.select(&:matched?).count
+
+    result = {
+      transactions: rows.count - matched_count,
       categories: Import::CategoryMapping.for_import(self).creational.count,
       tags: Import::TagMapping.for_import(self).creational.count
     }
 
-    mappings.merge(
+    result[:matched] = matched_count if matched_count > 0
+
+    result.merge!(
       accounts: Import::AccountMapping.for_import(self).creational.count,
     ) if account.nil?
 
-    mappings
+    result
   end
 
   def required_column_keys

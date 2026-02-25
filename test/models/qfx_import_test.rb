@@ -247,4 +247,110 @@ class QfxImportTest < ActiveSupport::TestCase
     assert_equal "%Y-%m-%d", import.date_format
     assert_equal "1,234.56", import.number_format
   end
+
+  test "generates rows with fitid stored" do
+    @import.update!(raw_file_str: SGML_QFX)
+    @import.generate_rows_from_csv
+    @import.reload
+
+    rows = @import.rows.order(:date)
+    assert_equal "20240115001", rows[0].fitid
+    assert_equal "20240120001", rows[1].fitid
+  end
+
+  # -- auto_match_rows! tests --
+
+  test "auto_match_rows! matches row by FITID to existing entry" do
+    existing_entry = Entry.create!(
+      account: accounts(:depository),
+      date: "2024-01-15",
+      amount: 45.00,
+      currency: "USD",
+      name: "Grocery Store",
+      fitid: "20240115001",
+      entryable: Transaction.create!
+    )
+
+    @import.update!(raw_file_str: SGML_QFX)
+    @import.generate_rows_from_csv
+    @import.reload
+
+    matched_row = @import.rows.find_by(fitid: "20240115001")
+    assert matched_row.matched?, "Expected row with matching FITID to be matched"
+    assert_equal existing_entry.id, matched_row.matched_entry_id
+  end
+
+  test "auto_match_rows! falls back to date+amount match when no FITID on existing entry" do
+    existing_entry = Entry.create!(
+      account: accounts(:depository),
+      date: "2024-01-15",
+      amount: 45.00,
+      currency: "USD",
+      name: "Grocery Store",
+      fitid: nil,
+      entryable: Transaction.create!
+    )
+
+    @import.update!(raw_file_str: SGML_QFX)
+    @import.generate_rows_from_csv
+    @import.reload
+
+    matched_row = @import.rows.find_by(date: "2024-01-15")
+    assert matched_row.matched?, "Expected row to be matched by date+amount fallback"
+    assert_equal existing_entry.id, matched_row.matched_entry_id
+  end
+
+  test "auto_match_rows! does not match entry from a different account" do
+    Entry.create!(
+      account: accounts(:credit_card),
+      date: "2024-01-15",
+      amount: 45.00,
+      currency: "USD",
+      name: "Grocery Store",
+      fitid: "20240115001",
+      entryable: Transaction.create!
+    )
+
+    @import.update!(raw_file_str: SGML_QFX)
+    @import.generate_rows_from_csv
+    @import.reload
+
+    matched_row = @import.rows.find_by(fitid: "20240115001")
+    assert_not matched_row.matched?, "Should not match entry from a different account"
+  end
+
+  test "import! skips matched rows to prevent duplicates" do
+    Entry.create!(
+      account: accounts(:depository),
+      date: "2024-01-15",
+      amount: 45.00,
+      currency: "USD",
+      name: "Grocery Store",
+      fitid: "20240115001",
+      entryable: Transaction.create!
+    )
+
+    @import.update!(raw_file_str: SGML_QFX)
+    @import.generate_rows_from_csv
+    @import.sync_mappings
+    @import.reload
+
+    # Only the credit row (unmatched) should be imported as a new entry
+    assert_difference -> { Entry.count }, 1 do
+      @import.publish
+    end
+  end
+
+  test "import! stores fitid on newly created entries" do
+    @import.update!(raw_file_str: SGML_QFX)
+    @import.generate_rows_from_csv
+    @import.sync_mappings
+    @import.reload
+
+    @import.publish
+
+    fitids = @import.entries.pluck(:fitid).compact
+    assert_includes fitids, "20240115001"
+    assert_includes fitids, "20240120001"
+  end
 end

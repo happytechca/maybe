@@ -7,6 +7,11 @@ class Import::RowsController < ApplicationController
     redirect_to import_row_path(@row.import, @row)
   end
 
+  def unmatch
+    @row.update_columns(matched_entry_id: nil)
+    redirect_to import_clean_path(@import)
+  end
+
   def show
   end
 

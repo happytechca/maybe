@@ -1,5 +1,6 @@
 class Import::Row < ApplicationRecord
   belongs_to :import
+  belongs_to :matched_entry, class_name: "Entry", optional: true
 
   validates :amount, numericality: true, allow_blank: true
   validates :currency, presence: true
@@ -9,6 +10,10 @@ class Import::Row < ApplicationRecord
   validate :currency_is_valid
 
   scope :ordered, -> { order(:id) }
+
+  def matched?
+    matched_entry_id.present?
+  end
 
   def tags_list
     if tags.blank?

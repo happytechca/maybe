@@ -114,7 +114,9 @@ Rails.application.routes.draw do
     resource :link_account, only: %i[show update], module: :import
     resource :qif_category_selection, only: %i[show update], module: :import
 
-    resources :rows, only: %i[show update], module: :import
+    resources :rows, only: %i[show update], module: :import do
+      member { patch :unmatch }
+    end
     resources :mappings, only: :update, module: :import
   end
 

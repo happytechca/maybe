@@ -17,6 +17,7 @@ class QfxImport < Import
         currency: (trn.currency.presence || default_currency).to_s,
         name:     (trn.name.presence || default_row_name).to_s,
         notes:    trn.memo.to_s,
+        fitid:    trn.fitid.to_s,
         account:  "",
         category: "",
         tags:     "",
@@ -29,13 +30,15 @@ class QfxImport < Import
     end
 
     rows.insert_all!(mapped_rows) if mapped_rows.any?
+
+    auto_match_rows!
   end
 
   def import!
     transaction do
       mappings.each(&:create_mappable!)
 
-      transactions = rows.map do |row|
+      transactions = rows.reject(&:matched?).map do |row|
         category = mappings.categories.mappable_for(row.category)
         tags = row.tags_list.map { |tag| mappings.tags.mappable_for(tag) }.compact
 
@@ -49,6 +52,7 @@ class QfxImport < Import
             name: row.name,
             currency: row.currency,
             notes: row.notes,
+            fitid: row.fitid.presence,
             import: self
           )
         )
@@ -93,5 +97,31 @@ class QfxImport < Import
       self.date_format = "%Y-%m-%d"
       self.number_format = "1,234.56"
       save!
+    end
+
+    # Auto-matches import rows against existing entries for the import's account.
+    # Uses FITID (Financial Institution Transaction ID) as primary key, then falls
+    # back to a date + amount fuzzy match for transactions imported before FITID
+    # tracking was introduced.
+    def auto_match_rows!
+      return unless account_id.present?
+
+      existing = account.entries.where(entryable_type: "Transaction")
+
+      by_fitid       = existing.where.not(fitid: nil).index_by(&:fitid)
+      by_date_amount = existing.index_by { |e| [ e.date.iso8601, e.amount.to_f.to_s ] }
+
+      rows.reload.each do |row|
+        next if row.fitid.blank? && row.date.blank?
+
+        matched =
+          (row.fitid.present? && by_fitid[row.fitid]) ||
+          begin
+            d = Date.strptime(row.date, date_format) rescue nil
+            d && by_date_amount[[ d.iso8601, row.signed_amount.to_f.to_s ]]
+          end
+
+        row.update_columns(matched_entry_id: matched.id) if matched
+      end
     end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_02_24_000002) do
+ActiveRecord::Schema[7.2].define(version: 2026_02_25_022811) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -235,8 +235,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_24_000002) do
     t.boolean "excluded", default: false
     t.string "plaid_id"
     t.jsonb "locked_attributes", default: {}
+    t.string "fitid"
     t.index "lower((name)::text)", name: "index_entries_on_lower_name"
     t.index ["account_id", "date"], name: "index_entries_on_account_id_and_date"
+    t.index ["account_id", "fitid"], name: "index_entries_on_account_id_and_fitid", where: "(fitid IS NOT NULL)"
     t.index ["account_id"], name: "index_entries_on_account_id"
     t.index ["date"], name: "index_entries_on_date"
     t.index ["entryable_type"], name: "index_entries_on_entryable_type"
@@ -349,6 +351,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_24_000002) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "exchange_operating_mic"
+    t.string "fitid"
+    t.uuid "matched_entry_id"
     t.index ["import_id"], name: "index_import_rows_on_import_id"
   end
 
@@ -847,6 +851,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_24_000002) do
   add_foreign_key "impersonation_session_logs", "impersonation_sessions"
   add_foreign_key "impersonation_sessions", "users", column: "impersonated_id"
   add_foreign_key "impersonation_sessions", "users", column: "impersonator_id"
+  add_foreign_key "import_rows", "entries", column: "matched_entry_id"
   add_foreign_key "import_rows", "imports"
   add_foreign_key "imports", "families"
   add_foreign_key "invitations", "families"
