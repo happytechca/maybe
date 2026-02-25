@@ -86,6 +86,7 @@
 
           <div class="p-4 bg-container rounded-bl-lg rounded-br-lg">
             <%= render "shared/pagination", pagy: pagy %>
+            <p class="text-sm text-secondary text-center mt-3"><%= pagy.count %> total transactions</p>
           </div>
         </div>
       <% end %>

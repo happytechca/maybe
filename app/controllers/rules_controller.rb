@@ -1,7 +1,7 @@
 class RulesController < ApplicationController
   include StreamExtensions
 
-  before_action :set_rule, only: [  :edit, :update, :destroy, :apply, :confirm ]
+  before_action :set_rule, only: [ :edit, :update, :destroy, :apply, :confirm, :duplicate ]
 
   def index
     @sort_by = params[:sort_by] || "name"
@@ -35,6 +35,15 @@ class RulesController < ApplicationController
     @rule.update!(active: true)
     @rule.apply_later(ignore_attribute_locks: true)
     redirect_back_or_to rules_path, notice: "#{@rule.resource_type.humanize} rule activated"
+  end
+
+  def duplicate
+    new_rule = @rule.duplicate
+    if new_rule.save
+      redirect_to rules_path, notice: "Rule duplicated"
+    else
+      redirect_to rules_path, alert: "Failed to duplicate rule"
+    end
   end
 
   def confirm

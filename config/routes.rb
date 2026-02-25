@@ -153,6 +153,7 @@ Rails.application.routes.draw do
     member do
       get :confirm
       post :apply
+      post :duplicate
     end
 
     collection do

@@ -1,7 +1,7 @@
 <%# locals: (rule:) %>
 <div id="<%= dom_id(rule) %>" class="flex justify-between items-center p-4 <%= rule.active? ? "text-primary" : "text-secondary" %>">
 
-  <div class="text-sm space-y-1.5">
+  <%= link_to edit_rule_path(rule), class: "block flex-1 text-sm space-y-1.5 hover:opacity-75 transition-opacity", data: { turbo_frame: "modal" } do %>
     <% if rule.name.present? %>
       <h3 class="font-medium text-md"><%= rule.name %></h3>
     <% end %>
@@ -55,13 +55,14 @@
         </span>
       </p>
     </div>
-  </div>
+  <% end %>
   <div class="flex items-center gap-4">
     <%= styled_form_with model: rule, namespace: "rule_#{rule.id}", data: { controller: "auto-submit-form" } do |f| %>
       <%= f.toggle :active, { data: { auto_submit_form_target: "auto" } } %>
     <% end %>
     <%= render DS::Menu.new do |menu| %>
       <% menu.with_item(variant: "link", text: "Edit", href: edit_rule_path(rule), icon: "pencil", data: { turbo_frame: "modal" }) %>
+      <% menu.with_item(variant: "button", text: "Duplicate", href: duplicate_rule_path(rule), icon: "copy") %>
       <% menu.with_item(variant: "link", text: "Re-apply rule", href: confirm_rule_path(rule), icon: "refresh-cw", data: { turbo_frame: "modal" }) %>
       <% menu.with_item(
         variant: "button",

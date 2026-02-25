@@ -49,6 +49,37 @@ class Rule < ApplicationRecord
     RuleJob.perform_later(self, ignore_attribute_locks: ignore_attribute_locks)
   end
 
+  def duplicate
+    new_rule = self.class.new(
+      family: family,
+      resource_type: resource_type,
+      effective_date: effective_date,
+      name: name.present? ? "#{name} (copy)" : nil,
+      active: false
+    )
+
+    conditions.each do |condition|
+      new_condition = new_rule.conditions.build(
+        condition_type: condition.condition_type,
+        operator: condition.operator,
+        value: condition.value
+      )
+      condition.sub_conditions.each do |sub|
+        new_condition.sub_conditions.build(
+          condition_type: sub.condition_type,
+          operator: sub.operator,
+          value: sub.value
+        )
+      end
+    end
+
+    actions.each do |action|
+      new_rule.actions.build(action_type: action.action_type, value: action.value)
+    end
+
+    new_rule
+  end
+
   def primary_condition_title
     return "No conditions" if conditions.none?
 
